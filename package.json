@@ -1,5 +1,5 @@
 {
-  "name": "emojame",
+  "name": "snowboard-emojedition",
   "version": "1.0.0",
   "description": "",
   "directories": {
@@ -7,14 +7,16 @@
   },
   "scripts": {
     "dev": "parcel serve assets/index.html",
-    "build": "spago build && parcel build assets/index.html"
+    "build": "spago build && parcel build assets/index.html",
+    "format": "purty --write src/Main.purs"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "parcel": "^2.0.0-rc.0"
+    "parcel": "^2.0.0-rc.0",
+    "purty": "^7.0.0",
+    "purescript": "^0.13.6",
+    "spago": "^0.20.3"
   },
-  "dependencies": {
-    "process": "^0.11.10"
-  }
+  "dependencies": {}
 }
