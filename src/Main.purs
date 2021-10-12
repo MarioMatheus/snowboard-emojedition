@@ -1,57 +1,44 @@
 module Main where
 
 import Prelude
--- import Debug.Trace (trace)
-import Data.Ord (signum)
 import Effect (Effect)
+import Data.Maybe (Maybe(..))
 import Emo8 (emo8)
 import Emo8.Data.Color as C
 import Emo8.Data.Emoji as E
 import Emo8.Game (class Game)
+import Emo8.Game.Update (Update, getCanvasSize)
 import Emo8.Game.Draw (cls, emor')
 import Emo8.Type (Size)
+import Emo8.Util.Collide (sinkCanvas)
+import Element.Player (Player, updatePlayer)
 
+-- import Debug.Trace (trace)
 data GameState
   = State
     { player :: Player
     }
 
-type Player
-  = { x :: Int
-    , y :: Int
-    , rotation :: Int
-    }
-
 instance gameState :: Game GameState where
-  update input (State state) =
+  update input (State state) = do
+    updatedPlayer <- system state.player
     pure
       $ State { player: updatedPlayer }
     where
-    updatedPlayer :: Player
-    updatedPlayer = system state.player
-
-    system :: Player -> Player
+    system :: Player -> Update Player
     system =
-      rotate
-        <<< movement
+      canvasCollision
+        <<< updatePlayer'
 
-    movement :: Player -> Player
-    movement player = case input.isLeft, input.isRight of
-      true, false -> player { x = player.x - 4, y = player.y - 1 }
-      false, true -> player { x = player.x + 4, y = player.y + 1 }
-      _, _ -> player
+    updatePlayer' :: Player -> Player
+    updatePlayer' = updatePlayer input
 
-    rotate :: Player -> Player
-    rotate player = case input.isLeft, input.isRight of
-      true, false -> player { rotation = max (-16) player.rotation - 2 }
-      false, true -> player { rotation = min 16 player.rotation + 2 }
-      _, _ ->
-        player
-          { rotation =
-            case player.rotation of
-              0 -> 0
-              _ -> player.rotation - signum player.rotation
-          }
+    canvasCollision :: Player -> Update Player
+    canvasCollision player = do
+      r <- getCanvasSize
+      pure case sinkCanvas r emoSize player.x player.y of
+        Just s -> player { x = player.x - s.x, y = player.y - s.y }
+        Nothing -> player
   draw (State state) = do
     cls C.snow
     emor' state.player.rotation E.snowboarder emoSize state.player.x state.player.y
