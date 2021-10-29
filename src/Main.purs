@@ -3,15 +3,17 @@ module Main where
 import Prelude
 import Data.Array (cons, filterA, length)
 import Data.Foldable (traverse_)
+import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Element.Hud (getScoreHud)
 import Element.Obstacle (Obstacle, createRandomObstacle, movementObstacle)
 import Element.Player (Player, updatePlayer)
 import Emo8 (emo8)
 import Emo8.Data.Color as C
 import Emo8.Data.Emoji as E
 import Emo8.Game (class Game)
-import Emo8.Game.Draw (cls, emor, emor')
+import Emo8.Game.Draw (cls, emo, emor, emor')
 import Emo8.Game.Update (Update, getCanvasSize)
 import Emo8.Type (Size)
 import Emo8.Util.Collide (sinkCanvas)
@@ -21,6 +23,9 @@ import Physics.Collision (isOutOfWorld)
 type PlayStateData
   = { player :: Player
     , obstacles :: Array Obstacle
+    , score :: Int
+    , obstacleSurpassCount :: Int
+    , isObstacleSurpassEnable :: Boolean
     }
 
 data GameState
@@ -39,6 +44,28 @@ instance gameState :: Game GameState where
         <<< updateObstacles
         <<< updatePlayer'
         <<< createObstacles
+        <<< updateScore
+        <<< updateSurpassCount
+
+    updateScore :: PlayStateData -> PlayStateData
+    updateScore s =
+      s
+        { score =
+          s.score
+            + case mod s.obstacleSurpassCount 5, s.isObstacleSurpassEnable of
+                0, true -> 1
+                _, _ -> 0
+        }
+
+    updateSurpassCount :: PlayStateData -> PlayStateData
+    updateSurpassCount s =
+      s
+        { obstacleSurpassCount = s.obstacleSurpassCount + 1 - length s.obstacles
+        , isObstacleSurpassEnable =
+          case length s.obstacles of
+            0 -> true
+            _ -> false
+        }
 
     updateObstacles :: PlayStateData -> PlayStateData
     updateObstacles s = s { obstacles = movementObstacle <$> s.obstacles }
@@ -48,7 +75,7 @@ instance gameState :: Game GameState where
       s
         { obstacles =
           case length s.obstacles of
-            0 -> cons (createRandomObstacle 1.5) s.obstacles
+            0 -> cons (createRandomObstacle (1.0 + 0.2 * toNumber s.score)) s.obstacles
             _ -> s.obstacles
         }
 
@@ -76,8 +103,11 @@ instance gameState :: Game GameState where
     cls C.snow
     emor' state.player.rotation E.snowboarder emoSize state.player.x state.player.y
     traverse_ drawObstacles state.obstacles
+    traverse_ drawHud $ getScoreHud state.score
     where
     drawObstacles o = emor o.rotation o.emoji o.size o.x o.y
+
+    drawHud e = emo e.emoji e.size e.x e.y
   sound _ = pure unit
 
 emoSize :: Size
@@ -92,6 +122,9 @@ initialState =
         , rotation: 0
         }
     , obstacles: []
+    , score: 0
+    , obstacleSurpassCount: -1
+    , isObstacleSurpassEnable: false
     }
 
 main :: Effect Unit
