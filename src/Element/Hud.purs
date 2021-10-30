@@ -3,7 +3,7 @@ module Element.Hud where
 import Prelude
 import Data.Array (length, range, reverse, zip, (!!))
 import Data.Char (toCharCode)
-import Data.Int (decimal, toStringAs)
+import Data.Int (Radix, decimal, radix, toStringAs)
 import Data.Maybe (fromMaybe)
 import Data.String.CodeUnits (toCharArray)
 import Data.Tuple (Tuple, fst, snd)
@@ -28,6 +28,8 @@ emojiList =
   , E.sevenOClock
   , E.eightOClock
   , E.nineOClock
+  , E.tenOClock
+  , E.elevenOClock
   ]
 
 getScoreHud :: Int -> Array HudScoreElement
@@ -48,7 +50,16 @@ getScoreHud score = map toScoreElement enumeratedEmojis
   hudEmojis = map toEmoji scoreChars
 
   scoreChars :: Array Char
-  scoreChars = toCharArray $ (toStringAs decimal score)
+  scoreChars = toCharArray $ (toStringAs radix' score)
+    where
+    radix' :: Radix
+    radix' = fromMaybe decimal (radix 12)
 
   toEmoji :: Char -> E.Emoji
-  toEmoji c = fromMaybe E.twelveOClock (emojiList !! (toCharCode c - 48))
+  toEmoji c = fromMaybe E.twelveOClock (emojiList !! index')
+    where
+    index' :: Int
+    index' = case c of
+      'a' -> 10
+      'b' -> 11
+      _ -> toCharCode c - 48
