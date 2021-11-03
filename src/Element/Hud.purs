@@ -38,9 +38,9 @@ getScoreHud score = map toScoreElement enumeratedEmojis
   toScoreElement :: (Tuple Int E.Emoji) -> HudScoreElement
   toScoreElement t =
     { emoji: snd t
-    , size: 10
+    , size: 12
     , y: 220
-    , x: 300 - 12 * (fst t)
+    , x: 300 - 15 * (fst t)
     }
 
   enumeratedEmojis :: Array (Tuple Int E.Emoji)

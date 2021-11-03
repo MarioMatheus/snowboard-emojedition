@@ -1,23 +1,22 @@
 module Main where
 
 import Prelude
-import Data.Array (cons, filterA, length)
+import Data.Array (cons, filterA, length, any)
 import Data.Foldable (traverse_)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Element.Hud (getScoreHud)
 import Element.Obstacle (Obstacle, createRandomObstacle, movementObstacle)
-import Element.Player (Player, updatePlayer)
+import Element.Player (Player, updatePlayer, movementFall)
+import Physics.Collision (isOutOfWorld, isColliding)
 import Emo8 (emo8)
 import Emo8.Data.Color as C
 import Emo8.Data.Emoji as E
 import Emo8.Game (class Game)
 import Emo8.Game.Draw (cls, emo, emor, emor')
 import Emo8.Game.Update (Update, getCanvasSize)
-import Emo8.Type (Size)
 import Emo8.Util.Collide (sinkCanvas)
-import Physics.Collision (isOutOfWorld)
 
 -- import Debug.Trace (trace)
 type PlayStateData
@@ -26,92 +25,167 @@ type PlayStateData
     , score :: Int
     , obstacleSurpassCount :: Int
     , isObstacleSurpassEnable :: Boolean
+    , nextState :: Maybe GameStage
+    }
+
+type GameOverData
+  = { player :: Player
+    , score :: Int
+    , canRestart :: Boolean
+    , nextState :: Maybe GameStage
     }
 
 data GameState
   = PlayState PlayStateData
+  | GameOverState GameOverData
+
+data GameStage
+  = Play
+  | GameOver
 
 instance gameState :: Game GameState where
-  update input (PlayState state) = do
-    updatedState <- system state
-    pure
-      $ PlayState updatedState
-    where
-    system :: PlayStateData -> Update PlayStateData
-    system =
-      canvasCollision
-        <=< removeOutObstacles
-        <<< updateObstacles
-        <<< updatePlayer'
-        <<< createObstacles
-        <<< updateScore
-        <<< updateSurpassCount
-
-    updateScore :: PlayStateData -> PlayStateData
-    updateScore s =
-      s
-        { score =
-          s.score
-            + case mod s.obstacleSurpassCount 5, s.isObstacleSurpassEnable of
-                0, true -> 1
-                _, _ -> 0
-        }
-
-    updateSurpassCount :: PlayStateData -> PlayStateData
-    updateSurpassCount s =
-      s
-        { obstacleSurpassCount = s.obstacleSurpassCount + 1 - length s.obstacles
-        , isObstacleSurpassEnable =
-          case length s.obstacles of
-            0 -> true
-            _ -> false
-        }
-
-    updateObstacles :: PlayStateData -> PlayStateData
-    updateObstacles s = s { obstacles = movementObstacle <$> s.obstacles }
-
-    createObstacles :: PlayStateData -> PlayStateData
-    createObstacles s =
-      s
-        { obstacles =
-          case length s.obstacles of
-            0 -> cons (createRandomObstacle (1.0 + 0.2 * toNumber s.score)) s.obstacles
-            _ -> s.obstacles
-        }
-
-    updatePlayer' :: PlayStateData -> PlayStateData
-    updatePlayer' s = s { player = updatePlayer input s.player }
-
-    removeOutObstacles :: PlayStateData -> Update PlayStateData
-    removeOutObstacles s = do
-      obstacles' <- filterOutObstacles s.obstacles
-      pure $ s { obstacles = obstacles' }
+  update input = case _ of
+    GameOverState state ->
+      pure case updatedState.nextState of
+        Just (Play) -> initialState
+        _ -> GameOverState updatedState
       where
-      filterOutObstacles :: Array Obstacle -> Update (Array Obstacle)
-      filterOutObstacles = filterA (pure <<< not <=< isObstacleOut)
+      updatedState :: GameOverData
+      updatedState = system state
 
-      isObstacleOut :: Obstacle -> Update Boolean
-      isObstacleOut { size, x, y } = isOutOfWorld size x y
+      system :: GameOverData -> GameOverData
+      system =
+        restartGame
+          <<< movementFallPlayer
 
-    canvasCollision :: PlayStateData -> Update PlayStateData
-    canvasCollision s = do
-      r <- getCanvasSize
-      pure case sinkCanvas r emoSize s.player.x s.player.y of
-        Just sink -> s { player { x = s.player.x - sink.x, y = s.player.y - sink.y } }
-        Nothing -> s
+      restartGame :: GameOverData -> GameOverData
+      restartGame s =
+        s
+          { nextState =
+            case s.canRestart, input.isUp of
+              true, true -> Just Play
+              _, _ -> Nothing
+          }
+
+      movementFallPlayer :: GameOverData -> GameOverData
+      movementFallPlayer s
+        | s.player.y > 20 = s { player = movementFall s.player }
+        | otherwise = s { canRestart = true }
+    PlayState state -> do
+      updatedState <- system state
+      pure case updatedState.nextState of
+        Just (GameOver) ->
+          GameOverState
+            { player: updatedState.player
+            , score: updatedState.score
+            , canRestart: false
+            , nextState: Nothing
+            }
+        _ -> PlayState updatedState
+      where
+      system :: PlayStateData -> Update PlayStateData
+      system =
+        canvasCollision
+          <=< removeOutObstacles
+          <<< obstacleCollision
+          <<< updateObstacles
+          <<< updatePlayer'
+          <<< createObstacles
+          <<< updateScore
+          <<< updateSurpassCount
+
+      updateScore :: PlayStateData -> PlayStateData
+      updateScore s =
+        s
+          { score =
+            s.score
+              + case mod s.obstacleSurpassCount 5, s.isObstacleSurpassEnable of
+                  0, true -> 1
+                  _, _ -> 0
+          }
+
+      updateSurpassCount :: PlayStateData -> PlayStateData
+      updateSurpassCount s =
+        s
+          { obstacleSurpassCount = s.obstacleSurpassCount + 1 - length s.obstacles
+          , isObstacleSurpassEnable =
+            case length s.obstacles of
+              0 -> true
+              _ -> false
+          }
+
+      updateObstacles :: PlayStateData -> PlayStateData
+      updateObstacles s = s { obstacles = movementObstacle <$> s.obstacles }
+
+      createObstacles :: PlayStateData -> PlayStateData
+      createObstacles s =
+        s
+          { obstacles =
+            case length s.obstacles of
+              0 -> cons (createRandomObstacle (1.0 + 0.2 * toNumber s.score)) s.obstacles
+              _ -> s.obstacles
+          }
+
+      updatePlayer' :: PlayStateData -> PlayStateData
+      updatePlayer' s = s { player = updatePlayer input s.player }
+
+      obstacleCollision :: PlayStateData -> PlayStateData
+      obstacleCollision s = s { nextState = next }
+        where
+        next :: Maybe GameStage
+        next
+          | any isColliding' s.obstacles = Just GameOver
+          | otherwise = Nothing
+
+        isColliding' :: Obstacle -> Boolean
+        isColliding' = isColliding s.player
+
+      removeOutObstacles :: PlayStateData -> Update PlayStateData
+      removeOutObstacles s = do
+        obstacles' <- filterOutObstacles s.obstacles
+        pure $ s { obstacles = obstacles' }
+        where
+        filterOutObstacles :: Array Obstacle -> Update (Array Obstacle)
+        filterOutObstacles = filterA (pure <<< not <=< isObstacleOut)
+
+        isObstacleOut :: Obstacle -> Update Boolean
+        isObstacleOut { size, x, y } = isOutOfWorld size x y
+
+      canvasCollision :: PlayStateData -> Update PlayStateData
+      canvasCollision s = do
+        r <- getCanvasSize
+        pure case sinkCanvas r s.player.size s.player.x s.player.y of
+          Just sink -> s { player { x = s.player.x - sink.x, y = s.player.y - sink.y } }
+          Nothing -> s
   draw (PlayState state) = do
     cls C.snow
-    emor' state.player.rotation E.snowboarder emoSize state.player.x state.player.y
     traverse_ drawObstacles state.obstacles
     traverse_ drawHud $ getScoreHud state.score
+    emor' state.player.rotation E.snowboarder state.player.size state.player.x state.player.y
     where
     drawObstacles o = emor o.rotation o.emoji o.size o.x o.y
 
     drawHud e = emo e.emoji e.size e.x e.y
-  sound _ = pure unit
+  draw (GameOverState state) = do
+    cls C.slateGray
+    emor' state.player.rotation E.snowboarder state.player.size state.player.x state.player.y
+    emor' 0 emojiReact 36 142 102
+    emor' 0 E.backhandIndexPointingRight 8 162 instructionEmojiY
+    emor' 0 E.upwardsButton 8 150 instructionEmojiY
+    traverse_ drawHud $ getScoreHud state.score
+    where
+    drawHud e = emo e.emoji e.size e.x e.y
 
-emoSize :: Size
-emoSize = 32
+    emojiReact :: E.Emoji
+    emojiReact
+      | state.canRestart = E.expressionlessFace
+      | otherwise = E.faceWithHandOverMouth
+
+    instructionEmojiY :: Int
+    instructionEmojiY
+      | state.canRestart = 96
+      | otherwise = -10
+  sound _ = pure unit
 
 initialState :: GameState
 initialState =
@@ -120,11 +194,13 @@ initialState =
         { x: 100
         , y: 150
         , rotation: 0
+        , size: 32
         }
     , obstacles: []
     , score: 0
     , obstacleSurpassCount: -1
     , isObstacleSurpassEnable: false
+    , nextState: Nothing
     }
 
 main :: Effect Unit

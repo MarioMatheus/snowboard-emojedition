@@ -14,6 +14,7 @@ type Player
   = { x :: Int
     , y :: Int
     , rotation :: Int
+    , size :: Int
     }
 
 type UpdateData
@@ -61,3 +62,8 @@ updatePlayer input player = _.player $ update { input, player }
     rotate
       <<< movementH
       <<< movementV
+
+movementFall :: Player -> Player
+movementFall player = player { x = x + playerSpeed.y, y = y - playerSpeed.y, rotation = rotation - 12 }
+  where
+  { x, y, rotation } = player
