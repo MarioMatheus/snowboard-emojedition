@@ -1,16 +1,16 @@
 {
   "name": "snowboard-emojedition",
   "version": "1.0.0",
-  "description": "",
+  "description": "Snowboard game implemented with purescript",
   "directories": {
     "test": "test"
   },
   "scripts": {
     "dev": "parcel serve assets/index.html",
-    "build": "spago build && parcel build assets/index.html --public-url ./",
+    "build": "spago build && parcel build assets/index.html",
     "format": "purty --write src/Main.purs"
   },
-  "author": "",
+  "author": "mariomatheus",
   "license": "ISC",
   "devDependencies": {
     "parcel": "^2.0.0-rc.0",
