@@ -162,7 +162,7 @@ instance gameState :: Game GameState where
 
     drawHud e = emo e.emoji e.size e.x e.y
   draw (GameOverState state) = do
-    cls C.slateGray
+    cls C.black
     emor' state.player.rotation E.snowboarder state.player.size state.player.x state.player.y
     emor' 0 emojiReact 36 142 102
     emor' 0 E.backhandIndexPointingRight 8 162 instructionEmojiY
