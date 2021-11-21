@@ -4,6 +4,8 @@ A endless runner snowboard game implemented with purescript and the [emo8 engine
 
 ## Game
 
+You can play the game in [](snowboard-emojedition.netlify.app).
+
 <p align="center">
     <img src="assets/snowboarding.gif">
 </p>

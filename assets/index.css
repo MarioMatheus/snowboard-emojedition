@@ -3,6 +3,7 @@ body {
   background-color: #e6dede;
   overflow: hidden;
   touch-action: none;
+  zoom: 2.5;
 }
 
 footer {
