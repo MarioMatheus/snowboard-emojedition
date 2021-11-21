@@ -1,6 +1,6 @@
 # Snowboard Emojedition 🏂
 
-A endless runner snowboard game made with purescript and the [emo8 engine](https://github.com/opyapeus/purescript-emo8), everything to learning and practice.
+A endless runner snowboard game implemented with purescript and the [emo8 engine](https://github.com/opyapeus/purescript-emo8), everything to learning and practice.
 
 ## Game
 
