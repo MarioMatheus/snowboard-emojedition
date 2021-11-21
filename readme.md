@@ -13,7 +13,7 @@ A endless runner snowboard game implemented with purescript and the [emo8 engine
 1. Clone project and install dependencies
 
 ```sh
-git clone https://github.com/MarioMatheus/snowboard-emojedition
+git clone https://github.com/MarioMatheus/snowboard-emojedition.git
 cd snowboard-emojedition
 npm install
 ```
