@@ -42,10 +42,7 @@ rotate :: UpdateData -> UpdateData
 rotate data' = case isLeft || isDown, isRight || isUp of
   true, false -> updateRotation $ max (-16) rotation - playerRotation
   false, true -> updateRotation $ min 16 rotation + playerRotation
-  _, _ ->
-    updateRotation case rotation of
-      0 -> 0
-      _ -> rotation - signum rotation
+  _, _ -> normalizeRotation rotation
   where
   { rotation } = data'.player
 
@@ -53,6 +50,11 @@ rotate data' = case isLeft || isDown, isRight || isUp of
 
   updateRotation :: Int -> UpdateData
   updateRotation rotation' = data' { player { rotation = rotation' } }
+
+  normalizeRotation :: Int -> UpdateData
+  normalizeRotation 0 = updateRotation 0
+
+  normalizeRotation rotation' = updateRotation (rotation' - signum rotation')
 
 updatePlayer :: Input -> Player -> Player
 updatePlayer input player = _.player $ update { input, player }

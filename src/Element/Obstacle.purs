@@ -3,7 +3,7 @@ module Element.Obstacle where
 import Prelude
 import Data.Array ((!!))
 import Data.Int (fromNumber)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (fromMaybe)
 import Effect.Random (randomInt)
 import Effect.Unsafe (unsafePerformEffect)
 import Emo8.Data.Emoji as E
@@ -42,16 +42,11 @@ movementObstacle o = o { x = o.x - xSpeed, y = o.y + ySpeed }
   ySpeed = roundSpeed o.speed
 
   roundSpeed :: Number -> Int
-  roundSpeed n = case fromNumber $ round n of
-    Just i -> i
-    Nothing -> 2
+  roundSpeed n = fromMaybe 2 (fromNumber $ round n)
 
 createRandomObstacle :: Number -> Obstacle
 createRandomObstacle speed =
-  { emoji:
-      case obstacleEmojis !! i of
-        Just e -> e
-        Nothing -> E.rock
+  { emoji: fromMaybe E.rock (obstacleEmojis !! i)
   , x:
       case fromBottom of
         true -> rand 0 320
