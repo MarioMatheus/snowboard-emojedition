@@ -6,7 +6,7 @@ Everything to learning and practice 🧐.
 
 ## Game 🕹
 
-You can play the game in [snowboard-emojedition.netlify.app](snowboard-emojedition.netlify.app).
+You can play the game in [snowboard-emojedition.netlify.app](https://snowboard-emojedition.netlify.app).
 
 <p align="center">
     <img src="assets/snowboarding.gif">
