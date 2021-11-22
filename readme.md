@@ -1,18 +1,20 @@
 # Snowboard Emojedition 🏂
 
-A endless runner snowboard game implemented with purescript and the [emo8 engine](https://github.com/opyapeus/purescript-emo8), everything to learning and practice.
+A endless runner snowboard game implemented with [purescript](https://github.com/purescript/purescript) and the [emo8 engine](https://github.com/opyapeus/purescript-emo8).
 
-## Game
+Everything to learning and practice 🧐.
 
-You can play the game in [](snowboard-emojedition.netlify.app).
+## Game 🕹
+
+You can play the game in [snowboard-emojedition.netlify.app](snowboard-emojedition.netlify.app).
 
 <p align="center">
     <img src="assets/snowboarding.gif">
 </p>
 
-## Build / Development
+## Build / Development 🤓
 
-1. Clone project and install dependencies
+1. Clone the project and install dependencies
 
 ```sh
 git clone https://github.com/MarioMatheus/snowboard-emojedition.git
